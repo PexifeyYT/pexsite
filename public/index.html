@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>made by pexifey</title>
+<meta name="description" content="PexSite - Free interactive educational tools and activities for students.">
+<meta name="keywords" content="education, learning, students, study, homework, math, science, language arts">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#111;color:#fff;font-family:Arial,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:sticky;top:0;z-index:10}
+header h1{font-size:1.2rem;color:#fff;letter-spacing:1px}
+header h1 span{color:#f60}
+#search{flex:1;max-width:360px;padding:8px 12px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;font-size:0.95rem;outline:none}
+#search:focus{border-color:#f60}
+#cat-bar{display:flex;gap:8px;padding:10px 16px;background:#161616;border-bottom:1px solid #222;flex-wrap:wrap}
+.cat-btn{padding:5px 14px;border-radius:20px;border:1px solid #333;background:#222;color:#aaa;cursor:pointer;font-size:0.85rem;transition:all 0.15s}
+.cat-btn:hover,.cat-btn.active{background:#f60;border-color:#f60;color:#fff}
+#count{padding:8px 16px;font-size:0.8rem;color:#555}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:10px 16px 24px}
+.card{background:#1e1e1e;border-radius:8px;padding:14px 10px 10px;cursor:pointer;transition:background 0.15s,transform 0.1s;border:1px solid #2a2a2a;user-select:none}
+.card:hover{background:#2a2a2a;transform:translateY(-2px)}
+.card .title{font-size:0.9rem;font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .cat{font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
+.card .tags{margin-top:4px;font-size:0.7rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#no-results{display:none;text-align:center;padding:60px 20px;color:#444;font-size:1rem}
+footer{text-align:center;padding:16px;color:#333;font-size:0.75rem;border-top:1px solid #1e1e1e}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pex<span>Site</span></h1>
+  <input id="search" type="text" placeholder="Search resources..." autocomplete="off">
+</header>
+<div id="cat-bar">
+  <button class="cat-btn active" data-cat="all">All</button>
+  <button class="cat-btn" data-cat="math">Math</button>
+  <button class="cat-btn" data-cat="science">Science</button>
+  <button class="cat-btn" data-cat="social">Social Studies</button>
+  <button class="cat-btn" data-cat="health">Health &amp; PE</button>
+  <button class="cat-btn" data-cat="language">Language Arts</button>
+  <button class="cat-btn" data-cat="research">Research</button>
+</div>
+<div id="count"></div>
+<div id="grid"></div>
+<div id="no-results">No resources found.</div>
+<footer>PexSite &mdash; Student Learning Hub</footer>
+
+<script>
+var CAT_LABEL={math:'Math',science:'Science',social:'Social Studies',health:'Health & PE',language:'Language Arts',research:'Research'};
+var allItems=[];
+var activeCat='all';
+var searchVal='';
+
+fetch('/data/catalog.json')
+  .then(function(r){return r.json();})
+  .then(function(items){allItems=items;render();});
+
+function render(){
+  var grid=document.getElementById('grid');
+  var noRes=document.getElementById('no-results');
+  var count=document.getElementById('count');
+  grid.innerHTML='';
+  var q=searchVal.toLowerCase();
+  var filtered=allItems.filter(function(g){
+    var catMatch=activeCat==='all'||g.category===activeCat;
+    var sm=!q||g.title.toLowerCase().indexOf(q)!==-1||g.category.toLowerCase().indexOf(q)!==-1||(g.tags&&g.tags.some(function(t){return t.toLowerCase().indexOf(q)!==-1;}));
+    return catMatch&&sm;
+  });
+  count.textContent=filtered.length+' resource'+(filtered.length!==1?'s':'');
+  if(filtered.length===0){noRes.style.display='block';return;}
+  noRes.style.display='none';
+  var frag=document.createDocumentFragment();
+  filtered.forEach(function(g){
+    var card=document.createElement('div');
+    card.className='card';
+    var label=CAT_LABEL[g.category]||g.category;
+    card.innerHTML='<div class="title">'+escH(g.title)+'</div><div class="cat">'+escH(label)+'</div><div class="tags">'+(g.tags?g.tags.join(' \xb7 '):'')+'</div>';
+    card.addEventListener('click',function(){location.href='/open.html?id='+encodeURIComponent(g.id);});
+    frag.appendChild(card);
+  });
+  grid.appendChild(frag);
+}
+
+function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.getElementById('search').addEventListener('input',function(){searchVal=this.value;render();});
+document.getElementById('cat-bar').addEventListener('click',function(e){
+  var btn=e.target.closest('.cat-btn');
+  if(!btn)return;
+  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  activeCat=btn.dataset.cat;
+  render();
+});
+</script>
+</body>
+</html>

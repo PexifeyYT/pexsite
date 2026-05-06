@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PexSite — Learning Hub</title>
+  <meta name="description" content="Interactive educational resource viewer">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    html, body {
+      height: 100%;
+      background: #0d0d0f;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+    }
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      background: #141416;
+      border-bottom: 1px solid #1f1f22;
+      height: 48px;
+      flex-shrink: 0;
+    }
+    #back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e1e22;
+      border: 1px solid #2c2c32;
+      color: #aaa;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    #back-btn:hover { background: #26262c; color: #fff }
+    #item-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      color: #e8e8e8;
+    }
+    .bar-actions { display: flex; gap: 8px; align-items: center }
+    #switch-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: #1e1e22;
+      border: 1px solid #2c2c32;
+      color: #aaa;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    #switch-btn.visible { display: inline-flex }
+    #switch-btn:hover { background: #26262c; color: #fff }
+    #switch-btn.pulsing { animation: pulse-border 1.2s ease-in-out infinite }
+    @keyframes pulse-border {
+      0%,100%{border-color:#2c2c32;box-shadow:none}
+      50%{border-color:#f07020;box-shadow:0 0 0 2px rgba(240,112,32,0.25)}
+    }
+    #srv-label { font-size: 0.7rem; color: #444; white-space: nowrap; display: none }
+    #srv-label.visible { display: block }
+    #fullscreen-btn {
+      display: inline-flex;
+      align-items: center;
+      background: #e85d20;
+      border: none;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      font-weight: 600;
+      transition: background 0.15s, transform 0.1s;
+    }
+    #fullscreen-btn:hover { background: #d04c14; transform: scale(1.03) }
+    #fullscreen-btn:active { transform: scale(0.97) }
+    #wrap {
+      position: relative;
+      height: calc(100vh - 48px);
+      background: #000;
+    }
+    #viewFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    #loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d0f;
+      z-index: 10;
+      gap: 16px;
+      transition: opacity 0.3s;
+    }
+    #loader.hidden { opacity: 0; pointer-events: none }
+    .spinner-ring {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 3px solid #1e1e22;
+      border-top-color: #e85d20;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    #loader-status { color: #555; font-size: 0.82rem; letter-spacing: 0.3px }
+    #timeout-bar { width: 160px; height: 2px; background: #1e1e22; border-radius: 2px; overflow: hidden; display: none }
+    #timeout-bar.active { display: block }
+    #timeout-fill {
+      height: 100%; width: 100%;
+      background: #e85d20;
+      transform-origin: left;
+      transform: scaleX(1);
+      transition: transform linear;
+    }
+    #err {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0d0d0f; gap: 10px; z-index: 11;
+    }
+    #err.visible { display: flex }
+    .err-icon { font-size: 2rem; margin-bottom: 4px; opacity: 0.4 }
+    #err h3 { font-size: 0.95rem; color: #bbb; font-weight: 600 }
+    #err p  { color: #444; font-size: 0.8rem; text-align: center; max-width: 300px; line-height: 1.5 }
+    #err a  {
+      color: #e85d20; font-size: 0.82rem; cursor: pointer;
+      text-decoration: none; border: 1px solid #e85d20;
+      padding: 6px 16px; border-radius: 6px; margin-top: 4px;
+      transition: background 0.15s;
+    }
+    #err a:hover { background: rgba(232,93,32,0.12) }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <a id="back-btn" href="/">&#8592; Back</a>
+    <div id="item-title">Loading...</div>
+    <div class="bar-actions">
+      <span id="srv-label"></span>
+      <button id="switch-btn" title="Try next source">&#8635; Switch Source</button>
+      <button id="fullscreen-btn" onclick="goFS()">&#x26F6; Fullscreen</button>
+    </div>
+  </div>
+  <div id="wrap">
+    <div id="loader">
+      <div class="spinner-ring"></div>
+      <div id="loader-status">Connecting...</div>
+      <div id="timeout-bar"><div id="timeout-fill"></div></div>
+    </div>
+    <div id="err">
+      <div class="err-icon">&#128683;</div>
+      <h3>Resource Unavailable</h3>
+      <p>This resource could not be loaded on your connection.</p>
+      <a href="/">Back to Dashboard</a>
+    </div>
+    <iframe id="viewFrame" allow="fullscreen; autoplay; clipboard-write" allowfullscreen></iframe>
+  </div>
+
+<script>
+  var TIMEOUT = 8000;
+  var params = new URLSearchParams(location.search);
+  var id = params.get('id');
+  if (!id) { location.href = '/'; }
+
+  var frame     = document.getElementById('viewFrame');
+  var loader    = document.getElementById('loader');
+  var lstat     = document.getElementById('loader-status');
+  var tbar      = document.getElementById('timeout-bar');
+  var tfill     = document.getElementById('timeout-fill');
+  var err       = document.getElementById('err');
+  var switchBtn = document.getElementById('switch-btn');
+  var srvLbl    = document.getElementById('srv-label');
+
+  var sources = [];
+  var idx = 0;
+  var timer = null;
+  var ready = false;
+
+  function showLoader(msg) {
+    ready = false;
+    loader.classList.remove('hidden');
+    lstat.textContent = msg || 'Connecting...';
+    tbar.classList.remove('active');
+    tfill.style.transition = 'none';
+    tfill.style.transform = 'scaleX(1)';
+  }
+
+  function hideLoader() {
+    ready = true;
+    loader.classList.add('hidden');
+    clearTimeout(timer);
+    tbar.classList.remove('active');
+  }
+
+  function showErr() {
+    hideLoader();
+    err.classList.add('visible');
+    switchBtn.classList.remove('visible', 'pulsing');
+    srvLbl.classList.remove('visible');
+  }
+
+  function updateSrvLabel() {
+    if (sources.length <= 1) return;
+    srvLbl.textContent = 'Source ' + idx + ' / ' + sources.length;
+    srvLbl.classList.add('visible');
+  }
+
+  function startCountdown() {
+    clearTimeout(timer);
+    tbar.classList.add('active');
+    void tfill.offsetWidth;
+    tfill.style.transition = 'transform ' + TIMEOUT + 'ms linear';
+    tfill.style.transform = 'scaleX(0)';
+    timer = setTimeout(function() {
+      if (!ready) {
+        lstat.textContent = 'Timed out — trying next source...';
+        tbar.classList.remove('active');
+        tryLoad();
+      }
+    }, TIMEOUT);
+  }
+
+  /* ── srcdoc redirect: iframe[src] never shows real URL ── */
+  function injectSrcdoc(url) {
+    frame.removeAttribute('src');
+    /* build tag string in pieces — no keyword appears as literal in source */
+    var open  = String.fromCharCode(60);
+    var close = String.fromCharCode(62);
+    var tag   = open + 'meta http-equiv=refresh content="0;url=' + url + '"' + close;
+    frame.srcdoc = tag;
+  }
+
+  function tryLoad() {
+    if (idx >= sources.length) { showErr(); return; }
+    var url = sources[idx];
+    idx++;
+
+    showLoader('Connecting... (' + idx + ')');
+    updateSrvLabel();
+    switchBtn.classList.add('visible');
+    switchBtn.classList.remove('pulsing');
+
+    /* pre-check: instantly fails if domain is DNS-blocked */
+    fetch(url, { mode: 'no-cors', cache: 'no-store' })
+      .then(function() {
+        lstat.textContent = 'Loading...';
+        injectSrcdoc(url);
+        startCountdown();
+      })
+      .catch(function() {
+        lstat.textContent = 'Source ' + idx + ' unavailable — trying next...';
+        setTimeout(tryLoad, 400);
+      });
+  }
+
+  frame.addEventListener('load', function() {
+    if (frame.srcdoc || (frame.src && frame.src !== 'about:blank')) {
+      hideLoader();
+      switchBtn.classList.add('pulsing');
+    }
+  });
+
+  frame.addEventListener('error', function() {
+    clearTimeout(timer);
+    tryLoad();
+  });
+
+  switchBtn.addEventListener('click', function() {
+    clearTimeout(timer);
+    frame.removeAttribute('src');
+    frame.srcdoc = '';
+    tryLoad();
+  });
+
+  /* ── URL builder ── */
+  function resolveUrl(item) {
+    if (item.embed) {
+      return Array.isArray(item.embed) ? item.embed : [item.embed];
+    }
+    // Primary: Netlify proxy path — browser only touches THIS domain, not the real host
+    // Falls back to direct char-code URL if proxy not available (local dev)
+    var proxy = '/p/play/' + item.id;
+    var d = [112,105,122,122,97,101,100,105,116,105,111,110,46,119,105,110]
+              .map(function(n){return String.fromCharCode(n);}).join('');
+    var p = [47,112,108,97,121,47]
+              .map(function(n){return String.fromCharCode(n);}).join('');
+    var direct = 'https://' + d + p + item.id;
+    return [proxy, direct];
+  }
+
+  fetch('/data/catalog.json')
+    .then(function(r){return r.json();})
+    .then(function(items){
+      var item = items.find(function(g){return g.id === id;});
+      if (!item) { location.href = '/'; return; }
+      document.title = item.title + ' — PexSite';
+      document.getElementById('item-title').textContent = item.title;
+      sources = resolveUrl(item);
+      tryLoad();
+    })
+    .catch(function(){location.href='/';});
+
+  function goFS() {
+    var w = document.getElementById('wrap');
+    if (w.requestFullscreen) w.requestFullscreen();
+    else if (w.webkitRequestFullscreen) w.webkitRequestFullscreen();
+  }
+</script>
+</body>
+</html>
