@@ -6,36 +6,48 @@ const STRIP = new Set([
   'content-security-policy-report-only',
   'x-content-type-options',
   'strict-transport-security',
+  'content-encoding',
 ]);
 
 const PE = 'https://pizzaedition.win';
 
-function rewriteHtml(html) {
-  // Rewrite absolute pizzaedition.win URLs to /api/pe/
-  html = html.replace(/https?:\/\/(?:[\w-]+\.)?pizzaedition\.win\//g, '/api/pe/');
+function rewriteText(text, ct) {
+  // Rewrite absolute PE domain URLs in any text content
+  text = text.replace(/https?:\/\/(?:[\w-]+\.)?pizzaedition\.win\//g, '/api/pe/');
 
-  // Rewrite root-relative paths in HTML attributes to /api/pe/
-  html = html.replace(
-    /((?:src|href|action|poster|data-src|data-href)=["'])\/(?!\/|api\/pe)/g,
-    '$1/api/pe/'
-  );
+  if (ct.includes('text/html')) {
+    // Rewrite root-relative paths in HTML attributes
+    text = text.replace(
+      /((?:src|href|action|poster|data-src|data-href)=["'])\/(?!\/|api\/pe)/g,
+      '$1/api/pe/'
+    );
+    // Rewrite srcset
+    text = text.replace(
+      /(srcset=["'][^"']*?)\s+(\/(?!\/|api\/pe))/g,
+      '$1 /api/pe/'
+    );
+    // Inject no-referrer meta to bypass CDN hotlink protection
+    text = text.replace(/(<head(?:\s[^>]*)?>)/i, '$1<meta name="referrer" content="no-referrer">');
+    // Block PE's own service worker registration so it doesn't intercept our proxy
+    text = text.replace(/navigator\.serviceWorker\.register\s*\([^)]+\)/g, 'Promise.resolve()');
+  }
 
-  // Rewrite root-relative paths inside srcset
-  html = html.replace(
-    /(srcset=["'][^"']*?)\s+(\/(?!\/|api\/pe))/g,
-    '$1 /api/pe/'
-  );
-
-  // Inject no-referrer (bypasses CDN hotlink protection for any remaining direct loads)
-  html = html.replace(/(<head(?:\s[^>]*)?>)/i, '$1<meta name="referrer" content="no-referrer">');
-
-  return html;
+  return text;
 }
 
 export default async function handler(req) {
   const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/api\/pe/, '') || '/';
-  const target = PE + path + url.search;
+
+  // Strip /api/pe prefix; strip .json suffix (client adds it as filter-bypass camouflage)
+  const path = url.pathname
+    .replace(/^\/api\/pe/, '')
+    .replace(/\.json$/, '')
+    || '/';
+
+  // Forward query string but strip our cloaking suffix (single bare word like ?mountainbike)
+  const qs = url.search.replace(/[?&][a-z]+$/i, '') || '';
+
+  const target = PE + path + qs;
 
   let upstream;
   try {
@@ -54,7 +66,8 @@ export default async function handler(req) {
     return new Response('Gateway error', { status: 502 });
   }
 
-  const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+  const ct = (upstream.headers.get('content-type') || '').toLowerCase();
+  const isText = ct.includes('text/html') || ct.includes('javascript') || ct.includes('text/css') || ct.includes('text/plain');
 
   const headers = new Headers();
   for (const [k, v] of upstream.headers.entries()) {
@@ -63,12 +76,12 @@ export default async function handler(req) {
   headers.set('x-frame-options', 'ALLOWALL');
   headers.set('access-control-allow-origin', '*');
 
-  if (contentType.includes('text/html')) {
+  if (isText) {
     const text = await upstream.text();
-    headers.set('content-type', 'text/html; charset=utf-8');
     headers.delete('content-length');
     headers.delete('transfer-encoding');
-    return new Response(rewriteHtml(text), { status: upstream.status, headers });
+    if (ct.includes('text/html')) headers.set('content-type', 'text/html; charset=utf-8');
+    return new Response(rewriteText(text, ct), { status: upstream.status, headers });
   }
 
   return new Response(upstream.body, { status: upstream.status, headers });
