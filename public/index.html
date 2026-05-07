@@ -159,7 +159,7 @@ html,body{height:100%;background:#111;color:#fff;font-family:-apple-system,Blink
 </div>
 
 <script>
-if(window!==window.top){window.location.replace('/p/');}
+if(window!==window.top){window.location.replace('/api/pe/');}
 var CAT={math:'Math',science:'Science',social:'Social Studies',health:'Health & PE',language:'Language Arts',research:'Research'};
 var allItems=[],activeCat='all',searchVal='';
 var frame=document.getElementById('viewFrame');
@@ -236,7 +236,7 @@ function openItem(g){
   if(g.embed){
     url=g.embed.startsWith('/')?g.embed+(g.embed.includes('?')?'&':'?')+sfx:g.embed;
   } else {
-    url='/p/play/'+g.id+'.json?'+sfx;
+    url='/api/pe/play/'+g.id+'.json?'+sfx;
   }
   frame.src=url;
 }
@@ -256,8 +256,9 @@ function goSearch(){
 function doSearch(){
   var q=document.getElementById('s2-input').value.trim();
   if(!q)return;
+  var sfx=localStorage.getItem('pex_suffix')||'mountainbike';
   document.getElementById('s2-hint').classList.add('off');
-  s2Frame.src='/ddg/html/?q='+encodeURIComponent(q)+'&kl=us-en&kp=-2';
+  s2Frame.src='/ddg/lite/?q='+encodeURIComponent(q)+'&kl=us-en&'+sfx;
 }
 
 frame.addEventListener('load',function(){pLoad.classList.add('off');});

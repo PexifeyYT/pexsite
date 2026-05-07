@@ -1,24 +1,9 @@
 {
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/p/:path*",   "destination": "https://pizzaedition.win/:path*" },
-    { "source": "/ddg/:path*", "destination": "https://html.duckduckgo.com/:path*" },
-    { "source": "/:path*",     "destination": "https://pizzaedition.win/:path*" }
-  ],
-  "headers": [
-    {
-      "source": "/p/:path*",
-      "headers": [
-        { "key": "X-Frame-Options",       "value": "ALLOWALL" },
-        { "key": "Content-Security-Policy","value": "frame-ancestors *" }
-      ]
-    },
-    {
-      "source": "/ddg/:path*",
-      "headers": [
-        { "key": "X-Frame-Options",       "value": "ALLOWALL" },
-        { "key": "Content-Security-Policy","value": "frame-ancestors *" }
-      ]
-    }
+    { "source": "/p/:path*",     "destination": "https://pizzaedition.win/:path*" },
+    { "source": "/ddg/:path*",   "destination": "https://lite.duckduckgo.com/:path*" },
+    { "source": "/_next/:path*", "destination": "https://pizzaedition.win/_next/:path*" },
+    { "source": "/:path*",       "destination": "https://pizzaedition.win/:path*" }
   ]
 }
