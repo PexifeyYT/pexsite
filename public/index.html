@@ -231,7 +231,14 @@ function openItem(g){
   document.getElementById('p-title').textContent=g.title;
   pLoad.classList.remove('off');
   pStat.textContent='Loading...';
-  frame.src=g.embed||('/p/play/'+g.id);
+  var sfx=localStorage.getItem('pex_suffix')||'mountainbike';
+  var url;
+  if(g.embed){
+    url=g.embed.startsWith('/')?g.embed+(g.embed.includes('?')?'&':'?')+sfx:g.embed;
+  } else {
+    url='/p/play/'+g.id+'.json?'+sfx;
+  }
+  frame.src=url;
 }
 function goHome(){
   frame.src='about:blank';
