@@ -1,5 +1,5 @@
 ﻿[
-  {"id":"pizza-edition","title":"Pizza Edition","category":"research","tags":["hub","browse","all"],"embed":"/p/"},
+  {"id":"pizza-edition","title":"Pizza Edition","category":"research","tags":["hub","browse","all"],"embed":"/api/pe/"},
   {"id":"slope","title":"Slope","category":"math","tags":["runner","speed"]},
   {"id":"run-3","title":"Run 3","category":"math","tags":["runner","space"]},
   {"id":"geometry-dash","title":"Geometry Dash","category":"math","tags":["rhythm","platformer"]},
