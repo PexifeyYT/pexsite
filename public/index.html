@@ -3,97 +3,262 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>made by pexifey</title>
-<meta name="description" content="PexSite - Free interactive educational tools and activities for students.">
-<meta name="keywords" content="education, learning, students, study, homework, math, science, language arts">
+<title>PexSite</title>
+<meta name="description" content="Interactive educational tools for students">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:#111;color:#fff;font-family:Arial,sans-serif}
-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:sticky;top:0;z-index:10}
-header h1{font-size:1.2rem;color:#fff;letter-spacing:1px}
-header h1 span{color:#f60}
-#search{flex:1;max-width:360px;padding:8px 12px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;font-size:0.95rem;outline:none}
-#search:focus{border-color:#f60}
-#cat-bar{display:flex;gap:8px;padding:10px 16px;background:#161616;border-bottom:1px solid #222;flex-wrap:wrap}
-.cat-btn{padding:5px 14px;border-radius:20px;border:1px solid #333;background:#222;color:#aaa;cursor:pointer;font-size:0.85rem;transition:all 0.15s}
-.cat-btn:hover,.cat-btn.active{background:#f60;border-color:#f60;color:#fff}
-#count{padding:8px 16px;font-size:0.8rem;color:#555}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:10px 16px 24px}
-.card{background:#1e1e1e;border-radius:8px;padding:14px 10px 10px;cursor:pointer;transition:background 0.15s,transform 0.1s;border:1px solid #2a2a2a;user-select:none}
-.card:hover{background:#2a2a2a;transform:translateY(-2px)}
-.card .title{font-size:0.9rem;font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .cat{font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:0.5px}
-.card .tags{margin-top:4px;font-size:0.7rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#no-results{display:none;text-align:center;padding:60px 20px;color:#444;font-size:1rem}
-footer{text-align:center;padding:16px;color:#333;font-size:0.75rem;border-top:1px solid #1e1e1e}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#111;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;overflow:hidden}
+
+/* ── Grid view ── */
+#v-grid{display:flex;flex-direction:column;height:100%}
+#grid-header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#1a1a1a;border-bottom:1px solid #222;flex-shrink:0}
+#grid-header h1{font-size:1.1rem;letter-spacing:.5px}
+#grid-header h1 span{color:#e85d20}
+#search{flex:1;max-width:320px;padding:7px 11px;border-radius:6px;border:1px solid #2a2a2a;background:#1e1e1e;color:#fff;font-size:.88rem;outline:none}
+#search:focus{border-color:#e85d20}
+#cat-bar{display:flex;gap:6px;padding:8px 14px;background:#161616;border-bottom:1px solid #1e1e1e;flex-wrap:wrap;flex-shrink:0}
+.cb{padding:4px 12px;border-radius:20px;border:1px solid #2a2a2a;background:#1e1e1e;color:#888;cursor:pointer;font-size:.8rem;transition:all .15s}
+.cb:hover,.cb.on{background:#e85d20;border-color:#e85d20;color:#fff}
+#count{padding:6px 14px;font-size:.75rem;color:#444;flex-shrink:0}
+#grid-wrap{overflow-y:auto;flex:1;padding:10px 14px 20px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px}
+.card{background:#1e1e1e;border-radius:7px;padding:12px 10px 9px;cursor:pointer;transition:background .12s,transform .1s;border:1px solid #242424}
+.card:hover{background:#272727;transform:translateY(-2px)}
+.card .t{font-size:.87rem;font-weight:600;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .c{font-size:.68rem;color:#777;text-transform:uppercase;letter-spacing:.4px}
+#no-res{display:none;text-align:center;padding:50px 20px;color:#333;font-size:.9rem}
+
+/* ── Player view ── */
+#v-player{display:none;flex-direction:column;height:100%}
+#p-bar{display:flex;align-items:center;gap:8px;padding:0 12px;background:#141416;border-bottom:1px solid #1f1f22;height:46px;flex-shrink:0}
+#p-back{display:inline-flex;align-items:center;gap:5px;background:#1e1e22;border:1px solid #2c2c32;color:#aaa;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:.8rem;white-space:nowrap;transition:background .12s,color .12s}
+#p-back:hover{background:#26262c;color:#fff}
+#p-title{font-size:.9rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:#e0e0e0}
+#p-actions{display:flex;gap:7px;align-items:center}
+#p-switch{display:none;align-items:center;background:#1e1e22;border:1px solid #2c2c32;color:#aaa;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:.8rem;white-space:nowrap;transition:background .12s}
+#p-switch.on{display:inline-flex}
+#p-switch:hover{background:#26262c;color:#fff}
+#p-switch.pulse{animation:pb 1.2s ease-in-out infinite}
+@keyframes pb{0%,100%{border-color:#2c2c32;box-shadow:none}50%{border-color:#e85d20;box-shadow:0 0 0 2px rgba(232,93,32,.2)}}
+#p-srv{font-size:.68rem;color:#333;white-space:nowrap;display:none}
+#p-srv.on{display:block}
+#p-fs{display:inline-flex;align-items:center;background:#e85d20;border:none;color:#fff;padding:5px 13px;border-radius:5px;cursor:pointer;font-size:.8rem;font-weight:600;transition:background .12s,transform .1s}
+#p-fs:hover{background:#d04c14;transform:scale(1.03)}
+#p-fs:active{transform:scale(.97)}
+#p-wrap{position:relative;flex:1;background:#000}
+#viewFrame{width:100%;height:100%;border:none;display:block}
+#p-loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;z-index:10;gap:14px;transition:opacity .3s}
+#p-loader.off{opacity:0;pointer-events:none}
+.ring{width:42px;height:42px;border-radius:50%;border:3px solid #1e1e22;border-top-color:#e85d20;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#p-stat{color:#444;font-size:.8rem}
+#p-tbar{width:150px;height:2px;background:#1e1e22;border-radius:2px;overflow:hidden;display:none}
+#p-tbar.on{display:block}
+#p-tfill{height:100%;background:#e85d20;transform-origin:left;transform:scaleX(1);transition:transform linear}
+#p-err{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0f;gap:9px;z-index:11}
+#p-err.on{display:flex}
+#p-err .ei{font-size:1.8rem;opacity:.35;margin-bottom:4px}
+#p-err h3{font-size:.9rem;color:#bbb}
+#p-err p{color:#333;font-size:.77rem;text-align:center;max-width:280px;line-height:1.5}
+#p-err button{color:#e85d20;font-size:.8rem;cursor:pointer;border:1px solid #e85d20;padding:5px 14px;border-radius:5px;margin-top:3px;background:none;transition:background .12s}
+#p-err button:hover{background:rgba(232,93,32,.1)}
 </style>
 </head>
 <body>
-<header>
-  <h1>Pex<span>Site</span></h1>
-  <input id="search" type="text" placeholder="Search resources..." autocomplete="off">
-</header>
-<div id="cat-bar">
-  <button class="cat-btn active" data-cat="all">All</button>
-  <button class="cat-btn" data-cat="math">Math</button>
-  <button class="cat-btn" data-cat="science">Science</button>
-  <button class="cat-btn" data-cat="social">Social Studies</button>
-  <button class="cat-btn" data-cat="health">Health &amp; PE</button>
-  <button class="cat-btn" data-cat="language">Language Arts</button>
-  <button class="cat-btn" data-cat="research">Research</button>
+
+<!-- GRID VIEW -->
+<div id="v-grid">
+  <div id="grid-header">
+    <h1>Pex<span>Site</span></h1>
+    <input id="search" type="text" placeholder="Search resources..." autocomplete="off">
+  </div>
+  <div id="cat-bar">
+    <button class="cb on" data-cat="all">All</button>
+    <button class="cb" data-cat="math">Math</button>
+    <button class="cb" data-cat="science">Science</button>
+    <button class="cb" data-cat="social">Social Studies</button>
+    <button class="cb" data-cat="health">Health &amp; PE</button>
+    <button class="cb" data-cat="language">Language Arts</button>
+    <button class="cb" data-cat="research">Research</button>
+  </div>
+  <div id="count"></div>
+  <div id="grid-wrap">
+    <div id="grid"></div>
+    <div id="no-res">No resources found.</div>
+  </div>
 </div>
-<div id="count"></div>
-<div id="grid"></div>
-<div id="no-results">No resources found.</div>
-<footer>PexSite &mdash; Student Learning Hub</footer>
+
+<!-- PLAYER VIEW -->
+<div id="v-player">
+  <div id="p-bar">
+    <button id="p-back" onclick="goHome()">&#8592; Back</button>
+    <div id="p-title">Loading...</div>
+    <div id="p-actions">
+      <span id="p-srv"></span>
+      <button id="p-switch">&#8635; Switch Source</button>
+      <button id="p-fs" onclick="goFS()">&#x26F6; Fullscreen</button>
+    </div>
+  </div>
+  <div id="p-wrap">
+    <div id="p-loader">
+      <div class="ring"></div>
+      <div id="p-stat">Connecting...</div>
+      <div id="p-tbar"><div id="p-tfill"></div></div>
+    </div>
+    <div id="p-err">
+      <div class="ei">&#128683;</div>
+      <h3>Resource Unavailable</h3>
+      <p>Could not load on your connection.</p>
+      <button onclick="goHome()">Back to Dashboard</button>
+    </div>
+    <iframe id="viewFrame" allow="fullscreen;autoplay;clipboard-write" allowfullscreen></iframe>
+  </div>
+</div>
 
 <script>
-var CAT_LABEL={math:'Math',science:'Science',social:'Social Studies',health:'Health & PE',language:'Language Arts',research:'Research'};
-var allItems=[];
-var activeCat='all';
-var searchVal='';
+var CAT={math:'Math',science:'Science',social:'Social Studies',health:'Health & PE',language:'Language Arts',research:'Research'};
+var TIMEOUT=8000;
+var allItems=[],activeCat='all',searchVal='';
+var sources=[],idx=0,tmr=null,rdy=false;
+
+var frame=document.getElementById('viewFrame');
+var loader=document.getElementById('p-loader');
+var stat=document.getElementById('p-stat');
+var tbar=document.getElementById('p-tbar');
+var tfill=document.getElementById('p-tfill');
+var errEl=document.getElementById('p-err');
+var swBtn=document.getElementById('p-switch');
+var srvLbl=document.getElementById('p-srv');
 
 fetch('/data/catalog.json')
   .then(function(r){return r.json();})
-  .then(function(items){allItems=items;render();});
+  .then(function(d){allItems=d;render();});
 
 function render(){
   var grid=document.getElementById('grid');
-  var noRes=document.getElementById('no-results');
+  var noRes=document.getElementById('no-res');
   var count=document.getElementById('count');
   grid.innerHTML='';
   var q=searchVal.toLowerCase();
-  var filtered=allItems.filter(function(g){
-    var catMatch=activeCat==='all'||g.category===activeCat;
-    var sm=!q||g.title.toLowerCase().indexOf(q)!==-1||g.category.toLowerCase().indexOf(q)!==-1||(g.tags&&g.tags.some(function(t){return t.toLowerCase().indexOf(q)!==-1;}));
-    return catMatch&&sm;
+  var list=allItems.filter(function(g){
+    return (activeCat==='all'||g.category===activeCat)&&
+      (!q||g.title.toLowerCase().indexOf(q)>-1||
+       (g.tags&&g.tags.some(function(t){return t.indexOf(q)>-1;})));
   });
-  count.textContent=filtered.length+' resource'+(filtered.length!==1?'s':'');
-  if(filtered.length===0){noRes.style.display='block';return;}
-  noRes.style.display='none';
-  var frag=document.createDocumentFragment();
-  filtered.forEach(function(g){
-    var card=document.createElement('div');
-    card.className='card';
-    var label=CAT_LABEL[g.category]||g.category;
-    card.innerHTML='<div class="title">'+escH(g.title)+'</div><div class="cat">'+escH(label)+'</div><div class="tags">'+(g.tags?g.tags.join(' \xb7 '):'')+'</div>';
-    card.addEventListener('click',function(){location.href='/open.html?id='+encodeURIComponent(g.id);});
-    frag.appendChild(card);
+  count.textContent=list.length+' resource'+(list.length!==1?'s':'');
+  noRes.style.display=list.length?'none':'block';
+  var f=document.createDocumentFragment();
+  list.forEach(function(g){
+    var c=document.createElement('div');
+    c.className='card';
+    c.innerHTML='<div class="t">'+esc(g.title)+'</div><div class="c">'+(CAT[g.category]||g.category)+'</div>';
+    c.addEventListener('click',function(){openItem(g);});
+    f.appendChild(c);
   });
-  grid.appendChild(frag);
+  grid.appendChild(f);
 }
 
-function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 document.getElementById('search').addEventListener('input',function(){searchVal=this.value;render();});
 document.getElementById('cat-bar').addEventListener('click',function(e){
-  var btn=e.target.closest('.cat-btn');
-  if(!btn)return;
-  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  activeCat=btn.dataset.cat;
-  render();
+  var b=e.target.closest('.cb');if(!b)return;
+  document.querySelectorAll('.cb').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on');activeCat=b.dataset.cat;render();
 });
+
+function openItem(g){
+  document.getElementById('v-grid').style.display='none';
+  document.getElementById('v-player').style.display='flex';
+  document.getElementById('p-title').textContent=g.title;
+  sources=resolveUrl(g);idx=0;rdy=false;
+  resetLoader();tryLoad();
+}
+
+function goHome(){
+  clearTimeout(tmr);
+  frame.removeAttribute('src');frame.srcdoc='';
+  document.getElementById('v-player').style.display='none';
+  document.getElementById('v-grid').style.display='flex';
+  errEl.classList.remove('on');
+  swBtn.classList.remove('on','pulse');
+  srvLbl.classList.remove('on');
+}
+
+function resolveUrl(item){
+  if(item.embed){return Array.isArray(item.embed)?item.embed:[item.embed];}
+  return ['/p/play/'+item.id];
+}
+
+function resetLoader(){
+  rdy=false;
+  loader.classList.remove('off');
+  stat.textContent='Connecting...';
+  tbar.classList.remove('on');
+  tfill.style.transition='none';
+  tfill.style.transform='scaleX(1)';
+  errEl.classList.remove('on');
+  swBtn.classList.remove('on','pulse');
+  srvLbl.classList.remove('on');
+}
+
+function hideLoader(){rdy=true;loader.classList.add('off');clearTimeout(tmr);tbar.classList.remove('on');}
+function showErr(){hideLoader();errEl.classList.add('on');swBtn.classList.remove('on','pulse');srvLbl.classList.remove('on');}
+
+function updateSrv(){
+  if(sources.length<=1)return;
+  srvLbl.textContent='Source '+idx+' / '+sources.length;
+  srvLbl.classList.add('on');
+}
+
+function startCountdown(){
+  clearTimeout(tmr);
+  tbar.classList.add('on');
+  void tfill.offsetWidth;
+  tfill.style.transition='transform '+TIMEOUT+'ms linear';
+  tfill.style.transform='scaleX(0)';
+  tmr=setTimeout(function(){
+    if(!rdy){stat.textContent='Timed out — trying next...';tbar.classList.remove('on');tryLoad();}
+  },TIMEOUT);
+}
+
+function tryLoad(){
+  if(idx>=sources.length){showErr();return;}
+  var url=sources[idx];idx++;
+  stat.textContent='Connecting... ('+idx+')';
+  updateSrv();swBtn.classList.add('on');swBtn.classList.remove('pulse');
+  fetch(url,{mode:'no-cors',cache:'no-store'})
+    .then(function(){
+      stat.textContent='Loading...';
+      injectSrcdoc(url);startCountdown();
+    })
+    .catch(function(){
+      stat.textContent='Source '+idx+' unavailable...';
+      setTimeout(tryLoad,400);
+    });
+}
+
+function injectSrcdoc(url){
+  frame.removeAttribute('src');
+  var o=String.fromCharCode(60),c=String.fromCharCode(62);
+  frame.srcdoc=o+'meta http-equiv=refresh content="0;url='+url+'"'+c;
+}
+
+frame.addEventListener('load',function(){
+  if(frame.srcdoc||(frame.src&&frame.src!=='about:blank')){
+    hideLoader();swBtn.classList.add('pulse');
+  }
+});
+frame.addEventListener('error',function(){clearTimeout(tmr);tryLoad();});
+swBtn.addEventListener('click',function(){
+  clearTimeout(tmr);frame.removeAttribute('src');frame.srcdoc='';tryLoad();
+});
+
+function goFS(){
+  var w=document.getElementById('p-wrap');
+  if(w.requestFullscreen)w.requestFullscreen();
+  else if(w.webkitRequestFullscreen)w.webkitRequestFullscreen();
+}
 </script>
 </body>
 </html>
