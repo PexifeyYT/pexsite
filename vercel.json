@@ -1,5 +1,14 @@
 {
   "outputDirectory": "public",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "ALLOWALL" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/p/:path*",     "destination": "https://pizzaedition.win/:path*" },
     { "source": "/ddg/:path*",   "destination": "https://lite.duckduckgo.com/:path*" },
