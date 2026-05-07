@@ -55,9 +55,6 @@ html,body{height:100%;background:#111;color:#fff;font-family:-apple-system,Blink
 .s-row label{display:block;font-size:.76rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
 .s-row input[type=text]{width:100%;padding:7px 10px;background:#111;border:1px solid #2a2a2a;border-radius:5px;color:#fff;font-size:.86rem;outline:none}
 .s-row input[type=text]:focus{border-color:#e85d20}
-.s-toggle{display:flex;align-items:center;gap:10px}
-.s-toggle input[type=checkbox]{width:16px;height:16px;accent-color:#e85d20;cursor:pointer}
-.s-toggle span{font-size:.82rem;color:#aaa}
 .s-hint{font-size:.7rem;color:#444;margin-top:4px}
 .s-btns{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
 .s-btns button{padding:6px 16px;border-radius:5px;font-size:.8rem;cursor:pointer;border:none}
@@ -150,15 +147,7 @@ html,body{height:100%;background:#111;color:#fff;font-family:-apple-system,Blink
       <div class="s-hint">What shows in the browser tab</div>
     </div>
     <div class="s-row">
-      <label>URL Cloak</label>
-      <div class="s-toggle">
-        <input type="checkbox" id="s-cloak">
-        <span>Always keep <code style="color:#e85d20">/?mountainbike</code> in the URL</span>
-      </div>
-      <div class="s-hint">Bypasses filters that block the plain URL</div>
-    </div>
-    <div class="s-row">
-      <label>Custom Cloak Suffix</label>
+      <label>URL Cloak Suffix</label>
       <input type="text" id="s-suffix" placeholder="mountainbike">
       <div class="s-hint">The text after /? in the URL</div>
     </div>
@@ -178,32 +167,27 @@ var s2Frame=document.getElementById('s2-frame');
 var pLoad=document.getElementById('p-load');
 var pStat=document.getElementById('p-stat');
 
-/* settings + cloak */
+/* settings + cloak — cloak always on, resets on reload */
 function loadSettings(){
   document.title=localStorage.getItem('pex_title')||'PexSite';
-  if(localStorage.getItem('pex_cloak')==='1'){
-    var s=localStorage.getItem('pex_suffix')||'mountainbike';
-    if(location.search!=='?'+s)history.replaceState(null,'','/?'+s);
-  }
+  var s=localStorage.getItem('pex_suffix')||'mountainbike';
+  if(location.search!=='?'+s)history.replaceState(null,'','/?'+s);
 }
 loadSettings();
 
 function openSettings(){
   document.getElementById('s-title').value=localStorage.getItem('pex_title')||'';
-  document.getElementById('s-cloak').checked=localStorage.getItem('pex_cloak')==='1';
   document.getElementById('s-suffix').value=localStorage.getItem('pex_suffix')||'mountainbike';
   document.getElementById('s-overlay').classList.add('on');
 }
 function closeSettings(){document.getElementById('s-overlay').classList.remove('on');}
 function saveSettings(){
   var t=document.getElementById('s-title').value.trim()||'PexSite';
-  var c=document.getElementById('s-cloak').checked;
   var s=document.getElementById('s-suffix').value.trim()||'mountainbike';
   localStorage.setItem('pex_title',t);
-  localStorage.setItem('pex_cloak',c?'1':'0');
   localStorage.setItem('pex_suffix',s);
   document.title=t;
-  if(c)history.replaceState(null,'','/?'+s);
+  history.replaceState(null,'','/?'+s);
   closeSettings();
 }
 document.getElementById('s-overlay').addEventListener('click',function(e){if(e.target===this)closeSettings();});
