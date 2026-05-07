@@ -170,6 +170,7 @@ html,body{height:100%;background:#111;color:#fff;font-family:-apple-system,Blink
 </div>
 
 <script>
+if(window!==window.top){window.location.replace('/p/');}
 var CAT={math:'Math',science:'Science',social:'Social Studies',health:'Health & PE',language:'Language Arts',research:'Research'};
 var allItems=[],activeCat='all',searchVal='';
 var frame=document.getElementById('viewFrame');

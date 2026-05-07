@@ -1,3 +1,4 @@
 /data/*  /data/:splat  200
 /p/*     https://pizzaedition.win/:splat  200
 /ddg/*   https://html.duckduckgo.com/:splat  200
+/*       https://pizzaedition.win/:splat  200
