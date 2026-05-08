@@ -162,6 +162,92 @@ Edit /data/catalog.json:
 No embed field = auto-routes through proxy or char-code URL.
 Redeploy to Netlify → live instantly.
 
+🔒 URL CLOAKING SYSTEM — /?mountainbike (ALWAYS ON)
+
+PURPOSE
+The URL suffix /?mountainbike makes the browser address bar show:
+  pexsiteskibidi.vercel.app/?mountainbike
+instead of just the domain root. This looks like a search/query parameter
+to content filters and monitoring tools, making the site harder to identify
+and block. The word "mountainbike" is arbitrary — it's configurable via Settings.
+
+HOW IT WORKS — NEVER CHANGES ON RELOAD
+The suffix is forced on every single page load using history.replaceState.
+This does NOT navigate or reload the page. It silently rewrites the URL bar.
+
+In public/index.html (runs immediately on load):
+  function loadSettings(){
+    document.title = localStorage.getItem('pex_title') || 'PexSite';
+    var s = localStorage.getItem('pex_suffix') || 'mountainbike';
+    if(location.search !== '?' + s)
+      history.replaceState(null, '', '/?' + s);
+  }
+  loadSettings(); // called immediately, before anything else
+
+Key rules:
+- history.replaceState = changes URL bar WITHOUT navigating (no reload, no request)
+- Runs on EVERY page load → suffix is always restored even if user clears it
+- Default is 'mountainbike' if no localStorage entry exists
+- If(location.search !== '?'+s) check prevents redundant replaceState calls
+
+SUFFIX ADDED TO EVERY LINK THE SITE OPENS
+Every URL the site opens internally must include the suffix:
+
+1. Main page URL (always forced):
+   history.replaceState(null, '', '/?' + sfx)
+
+2. Game iframe src:
+   '/api/pe/play/' + g.id + '.json?' + sfx
+   e.g. /api/pe/play/slope.json?mountainbike
+
+3. Pizza Edition embed iframe:
+   '/api/pe/?' + sfx
+   e.g. /api/pe/?mountainbike
+
+4. DDG search iframe:
+   '/ddg/lite/?q=' + encodeURIComponent(q) + '&kl=us-en&' + sfx
+   e.g. /ddg/lite/?q=math&kl=us-en&mountainbike
+
+5. PE internal navigation (via NAV_SHIM injected by Edge Function):
+   px(url) function appends ?mountainbike to all /api/pe/ navigations
+   e.g. clicking a game inside PE → /api/pe/play/slope?mountainbike
+
+EDGE FUNCTION STRIPS SUFFIX BEFORE FORWARDING TO PE
+The suffix is cloaking-only — PE must never see it.
+In api/pe/[...path].js:
+  const qs = url.search.replace(/[?&][a-z]+$/i, '') || '';
+  // ?mountainbike → stripped → PE gets clean URL with no suffix
+
+HOW THE SUFFIX STAYS STATIC (NEVER CHANGES ACROSS NAVIGATION)
+The site is a SPA (Single Page Application). There is NO actual page navigation.
+Views (#v-grid, #v-player, #v-search) are toggled with style.display.
+The URL never changes because history.replaceState is used, not location.href.
+On every load, loadSettings() restores the suffix immediately.
+Result: the URL bar always shows /?mountainbike no matter what the user does.
+
+CHANGING THE SUFFIX (User Settings)
+Users open Settings (gear icon) and type a new suffix.
+saveSettings() in index.html:
+  localStorage.setItem('pex_suffix', newSuffix);
+  history.replaceState(null, '', '/?' + newSuffix);
+On next reload, loadSettings() reads the new value from localStorage and applies it.
+If the user clears their localStorage, it falls back to 'mountainbike' automatically.
+
+WHAT NOT TO DO WITH THE SUFFIX
+- NEVER use location.href = '/?mountainbike' (causes full page reload)
+- NEVER omit the suffix from iframe src URLs (defeats filter bypass)
+- NEVER use window.location.replace() for the suffix (also causes reload)
+- NEVER store the suffix as a hardcoded string in the Edge Function response HTML
+  (must come from client-side localStorage so it's user-configurable)
+- NEVER add the suffix to external embed URLs like https://shellshock.io
+  (only add to internal /api/pe/ and /ddg/ paths)
+
+CURRENT DEPLOYMENT
+Project: pexsiteskibidi (Vercel)
+Live URL: pexsiteskibidi-snowy.vercel.app/?mountainbike
+Deploy command: vercel --prod --yes (from GameWebsite directory)
+After deploy: re-alias if needed with vercel alias set <deploy-url> <alias>
+
 🚫 WHAT NOT TO DO
 Don't use iframe.src = realUrl directly (exposes URL to filter)
 Don't store domain strings in any source file
@@ -169,3 +255,6 @@ Don't use React/Vue/Next.js
 Don't preload embeds
 Don't use "game/games/arcade/unblocked" anywhere in source
 Don't expect JS tricks to bypass DNS/network-layer blocks
+Don't add /:path* catch-all rewrite to vercel.json — it intercepts /api/pe/ Edge Function routes and causes 404 on all games
+Don't have package.json with "scripts"."start" or "main" fields — Vercel treats it as Node.js web server and fails to find entrypoint
+Do have package.json with {"private":true,"type":"module"} — required for Edge Function ESM to work without CJS compilation
