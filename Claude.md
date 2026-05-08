@@ -1,7 +1,10 @@
 🎯 Goal
 Create a high-performance HTML5 arcade website inspired by Pizza Edition (https://pizzaedition.win/).
 
+Site name is PexSite (brand the site as PexSite) and also add made by "jas"(sometimes "pex") in random places scattered across the website on randome pages
 The site must:
+
+Add a settings page(the link is still always static and never changes for ex pexsite.Something.com/?mountainbike) where you can choose the suffix and to choose mountainbike and change what comes after the link. Also in the settings there should be the option to change the site name(the name that shows in the actual tab at the top) and even to cloak the icon as stuff like google classroom, drive, youtube, gmail, and other stuff.
 
 Feel like a modern arcade hub (fast grid browsing)
 
@@ -161,6 +164,78 @@ Edit /data/catalog.json:
 }
 No embed field = auto-routes through proxy or char-code URL.
 Redeploy to Netlify → live instantly.
+
+🍕 PIZZA EDITION INTEGRATION
+
+HOW PE LINKS WORK
+Pizza Edition games live at: https://pizzaedition.win/play/[game-id]
+We NEVER use that URL directly — filters block it.
+Instead, route ALL PE links through our Edge Function proxy:
+  /api/pe/play/[game-id].json?mountainbike
+
+The Edge Function (api/pe/[...path].js):
+  1. Strips /api/pe prefix
+  2. Strips .json extension (filter camouflage — PE has no .json routes)
+  3. Strips ?mountainbike suffix
+  4. Fetches https://pizzaedition.win/play/[game-id] server-side
+  5. Returns HTML with all asset URLs rewritten to /api/pe/...
+
+HOW TO FIND PE GAME IDs
+Visit https://pizzaedition.win and hover/click any game.
+URL will be: pizzaedition.win/play/[game-id]
+Examples:
+  pizzaedition.win/play/slope       → id: "slope"
+  pizzaedition.win/play/run-3       → id: "run-3"
+  pizzaedition.win/play/1v1-lol     → id: "1v1-lol"
+  pizzaedition.win/play/geometry-dash → id: "geometry-dash"
+Use that id in catalog.json with NO embed field → auto-routes through proxy.
+
+PIZZA EDITION HUB BUTTON (MUST BE FIRST IN CATALOG)
+The Pizza Edition hub button opens PE's full homepage (all games browsable).
+It MUST be the first entry in /data/catalog.json:
+{
+  "id": "pizza-edition",
+  "title": "Pizza Edition",
+  "category": "research",
+  "tags": ["hub", "browse", "all"],
+  "embed": "/api/pe/"
+}
+The embed field "/api/pe/" routes to PE's homepage via Edge Function.
+openItem() in index.html appends ?mountainbike automatically:
+  url = '/api/pe/?' + sfx   →   /api/pe/?mountainbike
+
+ADDING /?mountainbike TO ALL PE-RELATED LINKS
+Rule: every internal link/iframe src that touches /api/pe/ or /ddg/ MUST have suffix.
+
+In catalog.json entries with embed field starting with /:
+  openItem() code: g.embed + (g.embed.includes('?') ? '&' : '?') + sfx
+  Result: /api/pe/?mountainbike  ✓
+
+In catalog.json entries WITHOUT embed field (standard PE games):
+  openItem() code: '/api/pe/play/' + g.id + '.json?' + sfx
+  Result: /api/pe/play/slope.json?mountainbike  ✓
+
+For PE navigation INSIDE the iframe (user clicking within PE hub):
+  NAV_SHIM px() function in Edge Function auto-appends suffix:
+  '/api/pe' + path + (path.includes('?') ? '&' : '?') + 'mountainbike'
+  Result: /api/pe/play/slope?mountainbike  ✓
+
+WHAT BREAKS IF YOU FORGET THE SUFFIX
+- GoGuardian sees clean /api/pe/play/slope URL → may recognize as game path → block
+- With suffix: /api/pe/play/slope.json?mountainbike → looks like JSON data fetch → passes
+- The .json extension + ?mountainbike combination is the full camouflage pattern
+
+EXTERNAL GAME EMBEDS (NOT PE)
+Games hosted on other domains use embed field with full https:// URL:
+{
+  "id": "shell-shockers",
+  "title": "Shell Shockers",
+  "category": "research",
+  "embed": "https://shellshock.io"
+}
+openItem() does NOT add suffix to external https:// URLs (would break them).
+These games are NOT proxied — they load directly. If school blocks shellshock.io,
+nothing we can do client-side. Must host on our own domain to proxy them.
 
 🔒 URL CLOAKING SYSTEM — /?mountainbike (ALWAYS ON)
 
